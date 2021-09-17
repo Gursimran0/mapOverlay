@@ -1,11 +1,10 @@
-import gmaps, requests
-import cv2, shutil
+
+import requests
 from flask import Flask, request, render_template
 import os
-from flask import Flask, flash, request, redirect, url_for
+from flask import Flask, request
 from werkzeug.utils import secure_filename
 from flask_googlemaps import GoogleMaps
-from flask_googlemaps import Map
 from PIL import Image
 
 app = Flask(__name__)
@@ -18,6 +17,7 @@ ALLOWED_EXTENSIONS = set(['txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'])
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
+# user sends coordinates and the api loads form
 @app.route('/getImage', methods=['GET'])
 def getImage():
     parameters = request.args
@@ -30,6 +30,7 @@ def getImage():
         return "Please provide latitude and longitude"
     return render_template('form.html', coordinates = {'lat' : latitude, 'long' : longitude})
 
+# saves the client image and process it
 @app.route('/uploadProcess', methods = ['POST'])
 def uploadProcess():
     f = request.files['file']
@@ -46,6 +47,7 @@ def uploadProcess():
     overlay_image()
     return f"Your image has been overlayed on map at latitude = {latitude} and longitude = {longitude}"
 
+#downloads the processed image
 @app.route('/download', methods=['GET'])
 def download():
     global new_img
@@ -58,10 +60,11 @@ def get_map(latitude, longitude):
     f.write(r.content)
     f.close()
 
+# adds an overlay to the map figure
 def overlay_image():
     background2 = Image.open("final.png")
     overlay = Image.open("plume.png")
-    background2 = background2.resize((514,257))
+    background2 = background2.resize((514,257))  # resizes the image from google maps
     print("2 SIZE ", background2.size)
 
     background2 = background2.convert("RGBA")
@@ -69,12 +72,10 @@ def overlay_image():
 
     global new_img
     new_img = Image.blend(background2, overlay, 0.25)
-    # new_img.save("new3.png","PNG")
-
+   
 if __name__ == '__main__':
     global new_img
     new_img = None
     app.debug = True
     app.run(host = '0.0.0.0', port = 5000)
 
-# response = requests.get(f'https://maps.googleapis.com/maps/api/staticmap?center=40.714728,-73.998672&zoom=12&size=400x400&key={key}')
